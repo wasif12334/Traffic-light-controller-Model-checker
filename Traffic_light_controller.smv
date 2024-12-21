@@ -1,0 +1,45 @@
+MODULE main
+VAR
+    main_light : {red, yellow, green}; -- Main road light
+    side_light : {red, yellow, green}; -- Side road light
+    timer : 0..10; -- A timer to control light transitions
+
+ASSIGN
+    -- Initial states
+    init(main_light) := green;
+    init(side_light) := red;
+    init(timer) := 0;
+
+    -- Main road light transitions
+    next(main_light) := case
+        main_light = green & timer < 7 : green; -- Green for 7 seconds
+        main_light = green & timer = 7 : yellow; -- Transition to yellow
+        main_light = yellow & timer = 8 : red; -- Transition to red
+        main_light = red & timer = 10 : green; -- Transition back to green
+        TRUE : main_light; -- Remain in current state
+    esac;
+
+    -- Side road light transitions (opposite of main light)
+    next(side_light) := case
+        main_light = green : red; -- Side is red when main is green
+        main_light = yellow : red; -- Side is red when main is yellow
+        main_light = red : green; -- Side is green when main is red
+        TRUE : side_light; -- Remain in current state
+    esac;
+
+    -- Timer increment
+    next(timer) := case
+        timer < 10 : timer + 1; -- Increment timer until it reaches 10
+        timer = 10 : 0; -- Reset timer after a full cycle
+        TRUE : timer; -- Default case
+    esac;
+
+-- SPECIFICATIONS
+-- Safety: Main and Side road should never both be green
+SPEC !(main_light = green & side_light = green)
+
+-- Liveness: Main light will eventually be green
+SPEC AF (main_light = green)
+
+-- Liveness: Side light will eventually be green
+SPEC AF (side_light = green)
